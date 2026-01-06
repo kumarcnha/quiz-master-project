@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+    
+    <h1 style="margin-bottom: 5px; font-size: 2.5rem; letter-spacing: 1px;">
+        🎓 Quiz Master
+    </h1>
+    <p style="margin-top: 0; margin-bottom: 30px; opacity: 0.8; font-style: italic;">
+        "Test your subject knowledge"
+    </p>
+    
+    <form method="POST">
+        <input type="text" name="username" placeholder="Username" required 
+               style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        
+        <input type="password" name="password" placeholder="Password" required 
+               style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+        
+        <button class="btn" style="width:100%; margin-top: 20px; background: #00f260; color: #333;">
+            Login
+        </button>
+    </form>
+    
+    <p style="margin-top: 20px; font-size: 0.9rem;">
+        Don't have an account? <a href="{{ url_for('signup') }}" style="color: #00f260; text-decoration: none; font-weight: bold;">Sign Up</a>
+    </p>
+</div>
+{% endblock %}

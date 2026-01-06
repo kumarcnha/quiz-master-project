@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Result Page Animations */
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px auto;
+        border: 4px solid #00f260;
+        box-shadow: 0 0 20px rgba(0, 242, 96, 0.3);
+        font-size: 3rem;
+        font-weight: bold;
+    }
+
+    /* The Review Section (Hidden by default) */
+    #review-section {
+        display: none; /* Hidden initially */
+        margin-top: 30px;
+        animation: slideDown 0.5s ease;
+    }
+    
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Review Cards */
+    .review-card {
+        background: rgba(255,255,255,0.05);
+        border-left: 5px solid #ccc;
+        padding: 15px;
+        margin-bottom: 15px;
+        text-align: left;
+        border-radius: 5px;
+    }
+
+    /* Colors for Right/Wrong */
+    .review-card.correct { border-left-color: #00f260; background: rgba(0, 242, 96, 0.05); }
+    .review-card.wrong { border-left-color: #ff4b4b; background: rgba(255, 75, 75, 0.1); }
+
+    .ans-label { font-size: 0.9rem; font-weight: bold; opacity: 0.8; }
+    .ans-text { margin-bottom: 5px; }
+    
+    .correct-text { color: #00f260; }
+    .wrong-text { color: #ff4b4b; text-decoration: line-through; }
+</style>
+
+<div class="card" style="text-align: center;">
+    <h1 style="margin-bottom: 10px;">Quiz Result</h1>
+    <h3 style="opacity: 0.8; margin-top: 0;">Subject: {{ subject|upper }}</h3>
+    
+    <div class="score-circle">
+        {{ score }} / {{ total }}
+    </div>
+    
+    <p style="font-size: 1.2rem;">
+        {% if score >= 10 %} 
+            🎉 Excellent Work! 
+        {% elif score >= 5 %} 
+            👍 Good Job, Keep Practicing! 
+        {% else %} 
+            📚 You might want to review this subject! 
+        {% endif %}
+    </p>
+
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('dashboard') }}" class="btn">Back to Dashboard</a>
+        <button onclick="toggleReview()" class="btn" style="background: #fff; color: #333;">Review Mistakes ⬇</button>
+    </div>
+
+    <div id="review-section">
+        <h3 style="margin-top: 30px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">Detailed Analysis</h3>
+        
+        {% for item in details %}
+        <div class="review-card {% if item.is_correct %}correct{% else %}wrong{% endif %}">
+            <p style="font-size: 1.1rem; font-weight: 600;">Q{{ loop.index }}: {{ item.q }}</p>
+            
+            {% if item.is_correct %}
+                <p class="ans-text">
+                    <span class="ans-label">Your Answer:</span> 
+                    <span class="correct-text">{{ item.user_answer }} ✅</span>
+                </p>
+            {% else %}
+                <p class="ans-text">
+                    <span class="ans-label">Your Answer:</span> 
+                    <span class="wrong-text">{{ item.user_answer if item.user_answer else "Skipped" }} ❌</span>
+                </p>
+                <p class="ans-text">
+                    <span class="ans-label">Correct Answer:</span> 
+                    <span class="correct-text">{{ item.correct_answer }}</span>
+                </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function toggleReview() {
+        const section = document.getElementById('review-section');
+        const btn = document.querySelector('button[onclick="toggleReview()"]');
+        
+        if (section.style.display === "none" || section.style.display === "") {
+            section.style.display = "block";
+            btn.innerHTML = "Hide Review ⬆";
+        } else {
+            section.style.display = "none";
+            btn.innerHTML = "Review Mistakes ⬇";
+        }
+    }
+</script>
+{% endblock %}
