@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* 1. QUIZ CONTAINER */
+    .quiz-wizard {
+        min-height: 400px;
+        position: relative;
+    }
+
+    /* 2. PROGRESS BAR */
+    .progress-track {
+        background: rgba(255, 255, 255, 0.2);
+        height: 8px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        background: #00e5ff; /* Cyan for visibility */
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    /* 3. QUESTION SLIDE (Hidden by default) */
+    .q-slide {
+        display: none; /* Hidden */
+        animation: fadeIn 0.4s ease-in-out;
+    }
+    .q-slide.active {
+        display: block; /* Visible */
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 4. MODERN RADIO BUTTONS */
+    /* Hide the actual ugly circle */
+    .hidden-radio {
+        display: none; 
+    }
+
+    /* The clickable box */
+    .option-box {
+        display: block;
+        background: rgba(255,255,255,0.1); /* Glassy look */
+        padding: 15px 20px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+
+    .option-box:hover {
+        background: rgba(255,255,255,0.2);
+    }
+
+    /* WHEN SELECTED (Controlled by the hidden radio input) */
+    .hidden-radio:checked + .option-box {
+        background: #fff;
+        color: #333;
+        border-color: #00e5ff;
+        font-weight: bold;
+        transform: scale(1.02);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    /* 5. NAVIGATION BUTTONS */
+    .nav-box {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        padding-top: 20px;
+    }
+    
+    .btn-nav {
+        padding: 10px 25px;
+        border-radius: 20px;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    .btn-prev { background: rgba(255,255,255,0.2); color: white; }
+    .btn-next { background: #fff; color: #667eea; }
+    .btn-submit { background: #00e5ff; color: #000; }
+</style>
+
+<div class="card quiz-wizard">
+    <h2 style="text-align: center; margin-bottom: 20px;">{{ subject|upper }} QUIZ</h2>
+
+    <div class="progress-track">
+        <div class="progress-fill" id="progressBar"></div>
+    </div>
+
+    <form method="POST" id="mainQuizForm">
+        {% for q in questions %}
+            {% set q_idx = loop.index0 %}
+            
+            <div class="q-slide {% if loop.first %}active{% endif %}" id="slide-{{ q_idx }}">
+                <p style="font-size: 1.2rem; font-weight: 600; margin-bottom: 15px;">
+                    <span style="opacity:0.7">Q{{ loop.index }}:</span> {{ q.q }}
+                </p>
+
+                <div class="options-list">
+                    {% for option in q.options %}
+                        {% set o_idx = loop.index0 %}
+                        
+                        <input type="radio" 
+                               class="hidden-radio" 
+                               name="question-{{ q_idx }}" 
+                               id="opt-{{ q_idx }}-{{ o_idx }}" 
+                               value="{{ option }}">
+                        
+                        <label class="option-box" for="opt-{{ q_idx }}-{{ o_idx }}">
+                            {{ option }}
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+
+        <div class="nav-box">
+            <button type="button" class="btn-nav btn-prev" id="prevBtn" onclick="moveSlide(-1)" style="visibility: hidden;">Previous</button>
+            <button type="button" class="btn-nav btn-next" id="nextBtn" onclick="moveSlide(1)">Next</button>
+            <button type="submit" class="btn-nav btn-submit" id="submitBtn" style="display: none;">Submit Quiz</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    let currentStep = 0;
+    // Count how many slides (questions) we have
+    const slides = document.querySelectorAll('.q-slide');
+    const totalSteps = slides.length;
+    
+    const progressBar = document.getElementById('progressBar');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function updateUI() {
+        // 1. Update Progress Bar
+        const percent = ((currentStep + 1) / totalSteps) * 100;
+        progressBar.style.width = percent + '%';
+
+        // 2. Show/Hide Buttons
+        // Prev Button
+        if (currentStep === 0) {
+            prevBtn.style.visibility = 'hidden';
+        } else {
+            prevBtn.style.visibility = 'visible';
+        }
+
+        // Next vs Submit Button
+        if (currentStep === totalSteps - 1) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'block';
+        } else {
+            nextBtn.style.display = 'block';
+            submitBtn.style.display = 'none';
+        }
+    }
+
+    function moveSlide(direction) {
+        // VALIDATION: If going NEXT (direction=1), check if an answer is selected
+        if (direction === 1) {
+            const currentSlide = slides[currentStep];
+            const inputs = currentSlide.querySelectorAll('input[type="radio"]');
+            let hasAnswer = false;
+            inputs.forEach(input => {
+                if (input.checked) hasAnswer = true;
+            });
+
+            if (!hasAnswer) {
+                alert("Please select an answer!");
+                return; // Stop right here
+            }
+        }
+
+        // 1. Hide current slide
+        slides[currentStep].classList.remove('active');
+
+        // 2. Change index
+        currentStep += direction;
+
+        // 3. Show new slide
+        slides[currentStep].classList.add('active');
+
+        // 4. Update Buttons/Bar
+        updateUI();
+    }
+
+    // Initialize on load
+    updateUI();
+</script>
+{% endblock %}
